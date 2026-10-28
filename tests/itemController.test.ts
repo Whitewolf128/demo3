@@ -4,6 +4,7 @@ import * as itemController from "../src/api/v1/controllers/itemController";
 import * as itemService from "../src/api/v1/services/itemService";
 import { Item } from "../src/api/v1/models/itemModel"; 
 import { mock } from "node:test";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
 jest.mock("../src/api/v1/services/itemService");
 
@@ -17,8 +18,8 @@ describe("Item Controller", () => {
         jest.clearAllMocks();
         mockReq = { params: {}, body: {} };
         mockRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
+            status: jest.fn().mockReturnThis() as Response["status"],
+            json: jest.fn() as Response["json"],
         };
         mockNext = jest.fn();
     });
@@ -44,6 +45,7 @@ describe("Item Controller", () => {
 
             expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.OK);
             expect(mockRes.json).toHaveBeenCalledWith({
+                status: "success",
                 message: "Items retrieved successfully",
                 data: mockItems,
             });
@@ -75,23 +77,9 @@ describe("Item Controller", () => {
 
             expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.CREATED);
             expect(mockRes.json).toHaveBeenCalledWith({
+                status: "success",
                 message: "Item created successfully",
                 data: mockItem,
-            });
-        });
-
-        it("should return 400 when name is missing", async () => {
-            mockReq.body = { description: "Test Description" };
-
-            await itemController.createItem(
-                mockReq as Request,
-                mockRes as Response,
-                mockNext
-            );
-
-            expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.BAD_REQUEST);
-            expect(mockRes.json).toHaveBeenCalledWith({
-                message: "Item name is required",
             });
         });
     });

@@ -1,80 +1,130 @@
 import { Item } from "../models/itemModel";
+import {
+    createDocument,
+    getDocuments,
+    getDocumentById,
+    updateDocument,
+    deleteDocument,
+} from "../repositories/firestoreRepository";
 
-// In-memory storage for demo purposes
-const items: Item[] = [];
+const COLLECTION = "items";
 
 /**
- * Retrieves all items from storage
+ * Retrieves all items from Firestore
  * @returns Array of all items
  */
 export const getAllItems = async (): Promise<Item[]> => {
-    return structuredClone(items);
+    try {
+        const snapshot = await getDocuments(COLLECTION);
+        const items: Item[] = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate() || new Date(),
+                updatedAt: data.updatedAt?.toDate() || new Date(),
+            } as Item;
+        });
+        return items;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
- * Creates a new item
- * @param itemData - The data for the new item (name and description)
+ * Creates a new item in Firestore
+ * @param itemData - The data for the new item
  * @returns The created item with generated ID
  */
 export const createItem = async (itemData: {
     name: string;
     description: string;
+    price?: number;
 }): Promise<Item> => {
-    // create a new item with generated id
-    const newItem: Item = {
-        id: Date.now().toString(),
-        name: itemData.name,
-        description: itemData.description,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    };
+    try {
+        const now = new Date();
+        const newItemData = {
+            ...itemData,
+            createdAt: now,
+            updatedAt: now,
+        };
 
-    items.push(newItem);
-
-    return structuredClone(newItem);
+        const id = await createDocument<Item>(COLLECTION, newItemData);
+        return { id, ...newItemData } as Item;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
- * Updates (replaces) an existing item
+ * Retrieves a single item by ID from Firestore
+ * @param id - The ID of the item to retrieve
+ * @returns The item if found
+ * @throws Error if item not found
+ */
+export const getItemById = async (id: string): Promise<Item> => {
+    try {
+        const doc = await getDocumentById(COLLECTION, id);
+        if (!doc) {
+            throw new Error(`Item with ID ${id} not found`);
+        }
+
+        const data = doc.data();
+        const item: Item = {
+            id: doc.id,
+            ...data,
+            createdAt: data?.createdAt?.toDate() || new Date(),
+            updatedAt: data?.updatedAt?.toDate() || new Date(),
+        } as Item;
+
+        return item;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Updates an existing item in Firestore
  * @param id - The ID of the item to update
- * @param itemData - The fields to updates (name and/or description)
+ * @param itemData - The fields to update
  * @returns The updated item
- * @throws Error if item with given ID is not found
+ * @throws Error if item not found
  */
 export const updateItem = async (
     id: string,
-    itemData: Pick<Item, "name" | "description">
+    itemData: Pick<Item, "name" | "description" | "price">
 ): Promise<Item> => {
-    const index: number = items.findIndex((item: Item) => item.id === id);
+    try {
+        const updateData = {
+            ...itemData,
+            updatedAt: new Date(),
+        };
 
-    if (index === -1) {
-        throw new Error(`Item with ID ${id} not found`);
+        await updateDocument<Item>(COLLECTION, id, updateData);
+
+        // Return the updated item
+        const updatedItem = await getItemById(id);
+        return updatedItem;
+    } catch (error) {
+        throw error;
     }
-
-    items[index] = {
-        ...items[index],
-        ...itemData,
-        updatedAt: new Date(),
-    };
-
-    return structuredClone(items[index]);
 };
 
 /**
- * Deletes an item from storage
+ * Deletes an item from Firestore
  * @param id - The ID of the item to delete
- * @throws Error if item with given ID is not found
+ * @throws Error if item not found
  */
 export const deleteItem = async (id: string): Promise<void> => {
-    const index: number = items.findIndex((item: Item) => item.id === id);
+    try {
+        // Check if item exists before deleting
+        const doc = await getDocumentById(COLLECTION, id);
+        if (!doc) {
+            throw new Error(`Item with ID ${id} not found`);
+        }
 
-    if (index === -1) {
-        throw new Error(`Item with ID ${id} not found`);
+        await deleteDocument(COLLECTION, id);
+    } catch (error) {
+        throw error;
     }
-
-    items.splice(index, 1);
 };
-
-export function getItemById(id: string): Item | PromiseLike<Item> {
-    throw new Error("Function not implemented.");
-}

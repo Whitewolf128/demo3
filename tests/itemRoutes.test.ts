@@ -1,13 +1,16 @@
 import request from "supertest";
+import { Request, Response } from "express";
 import app from "../src/app";
 import * as itemController from "../src/api/v1/controllers/itemController";
 import { HTTP_STATUS } from "../src/constants/httpConstants";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
 
 jest.mock("../src/api/v1/controllers/itemController", () => ({
-    getAllItems: jest.fn((req, res) => res.status(HTTP_STATUS.OK).send()),
-    createItem: jest.fn((req, res) => res.status(HTTP_STATUS.CREATED).send()),
-    updateItem: jest.fn((req, res) => res.status(HTTP_STATUS.OK).send()),
-    deleteItem: jest.fn((req, res) => res.status(HTTP_STATUS.OK).send()),
+    getAllItems: jest.fn((req: Request, res: Response) => res.status(HTTP_STATUS.OK).send()),
+    createItem: jest.fn((req: Request, res: Response) => res.status(HTTP_STATUS.CREATED).send()),
+    getItemById: jest.fn((req: Request, res: Response) => res.status(HTTP_STATUS.OK).send()),
+    updateItem: jest.fn((req: Request, res: Response) => res.status(HTTP_STATUS.OK).send()),
+    deleteItem: jest.fn((req: Request, res: Response) => res.status(HTTP_STATUS.OK).send()),
 }));
 
 describe("Item Routes", () => {
@@ -31,6 +34,13 @@ describe("Item Routes", () => {
 
             await request(app).post("/api/v1/items/").send(mockItem);
             expect(itemController.createItem).toHaveBeenCalled();
+        });
+    });
+
+    describe("GET /api/v1/items/:id", () => {
+        it("should call getItemById controller", async () => {
+            await request(app).get("/api/v1/items/testId");
+            expect(itemController.getItemById).toHaveBeenCalled();
         });
     });
 

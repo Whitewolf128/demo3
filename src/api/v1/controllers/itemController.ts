@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
 import * as itemService from "../services/itemService";
-import { Item } from "../models/itemModel";
+import type { Item } from "../models/itemModel";
+import { successResponse } from "../models/responseModel";
 
 /**
- * Manages requests and reponses to retrieve all Items
- * @param req - The express Request
- * @param res  - The express Response
- * @param next - The express middleware chaining function
+ * Retrieves all items
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
  */
 export const getAllItems = async (
     req: Request,
@@ -16,111 +17,19 @@ export const getAllItems = async (
 ): Promise<void> => {
     try {
         const items: Item[] = await itemService.getAllItems();
-        res.status(HTTP_STATUS.OK).json({
-            message: "Items retrieved successfully",
-            data: items,
-        });
-    } catch (error: unknown) {
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(items, "Items retrieved successfully")
+        );
+    } catch (error) {
         next(error);
     }
 };
 
 /**
- * Manages requests, reponses, and validation to create an Item
- * @param req - The express Request
- * @param res  - The express Response
- * @param next - The express middleware chaining function
- */
-export const createItem = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
-    try {
-        // Basic validation - check for required fields
-        if (!req.body.name) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({
-                message: "Item name is required",
-            });
-        } else if (!req.body.description) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({
-                message: "Item dscription is required",
-            });
-        } else {
-            // Extract only the fields we want (destructuring)
-            // const name: string = req.body.name;
-            // const description: string = req.body.description;
-            const { name, description } = req.body;
-
-            const newItem: Item = await itemService.createItem({ name, description });
-            res.status(HTTP_STATUS.CREATED).json({
-                message: "Item created successfully",
-                data: newItem,
-            });
-        }
-    } catch (error: unknown) {
-        next(error);
-    }
-};
-
-/**
- * Manages requests and reponses to update an Item
- * @param req - The express Request
- * @param res  - The express Response
- * @param next - The express middleware chaining function
- */
-export const updateItem = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
-    try {
-        // const id: string = req.params.id;
-        const { id } = req.params;
-
-        // Extract update fields
-        const { name, description } = req.body;
-
-        // create the update item object with the fields to be updated
-        const updatedItem: Item = await itemService.updateItem(id, { name, description });
-
-        res.status(HTTP_STATUS.OK).json({
-            message: "Item updated successfully",
-            data: updatedItem,
-        });
-    } catch (error: unknown) {
-        next(error);
-    }
-};
-
-/**
- * Manages requests and reponses to delete an Item
- * @param req - The express Request
- * @param res  - The express Response
- * @param next - The express middleware chaining function
- */
-export const deleteItem = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
-    try {
-        const id: string = req.params.id;
-
-        await itemService.deleteItem(id);
-        res.status(HTTP_STATUS.OK).json({
-            message: "Item deleted successfully",
-        });
-    } catch (error: unknown) {
-        next(error);
-    }
-};
-
-/**
- * Retrieves an Item by its route parameter ID.
- * @param req - The express Request
- * @param res - The express Response
- * @param next - The express middleware chaining function
+ * Retrieves a single item by ID
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
  */
 export const getItemById = async (
     req: Request,
@@ -128,13 +37,86 @@ export const getItemById = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const id: string = req.params.id;
+        const { id } = req.params;
         const item: Item = await itemService.getItemById(id);
-        res.status(HTTP_STATUS.OK).json({
-            message: "Item retrieved successfully",
-            data: item,
-        });
-    } catch (error: unknown) {
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(item, "Item retrieved successfully")
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Creates a new item
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ */
+export const createItem = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        // Extract validated data from request body
+        const { name, description, price } = req.body;
+        const itemData = { name, description, price };
+
+        const newItem: Item = await itemService.createItem(itemData);
+        res.status(HTTP_STATUS.CREATED).json(
+            successResponse(newItem, "Item created successfully")
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Updates an existing item
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ */
+export const updateItem = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { name, description, price } = req.body;
+
+        // Create update data object with only the fields that can be updated
+        const updateData = { name, description, price };
+
+        const updatedItem: Item = await itemService.updateItem(id, updateData);
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(updatedItem, "Item updated successfully")
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Deletes an item
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ */
+export const deleteItem = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const { id } = req.params;
+        await itemService.deleteItem(id);
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(null, "Item deleted successfully")
+        );
+    } catch (error) {
         next(error);
     }
 };
