@@ -74,3 +74,7 @@ export const deleteItem = async (id: string): Promise<void> => {
 
     items.splice(index, 1);
 };
+
+export function getItemById(id: string): Item | PromiseLike<Item> {
+    throw new Error("Function not implemented.");
+}
