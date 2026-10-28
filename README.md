@@ -17,9 +17,10 @@ npm install typescript ts-node @types/node --save-dev
 5.npm install jest ts-jest @types/jest supertest @types/supertest --save-dev
 6. npm audit fix **fixes vulnerabilities for packages.
 7. npm install morgan @types/morgan
+8. npm install joi
 *note: use --force if the packages have problems installing.
 **note: or if you want to fix the packages use npm audit fix
-
+*** note: use npm list joi to see what the version is
 add to tsconfig.json
 "rootDir": "src",
 "types": ["node"],
